@@ -1,4 +1,5 @@
 import Image from 'next/image'
+import {CredentialResponse, GoogleLogin} from '@react-oauth/google'
 import {FaRegEnvelope, FaXTwitter} from 'react-icons/fa6'
 import { GoHomeFill } from "react-icons/go"
 import { IoSearch } from "react-icons/io5";
@@ -12,7 +13,12 @@ import FeedCard from '@/Components/FeedCards/card';
 
 
 
-import React from 'react';
+import React, { useCallback } from 'react';
+import { error } from 'console';
+import toast from 'react-hot-toast';
+import { Token } from 'graphql';
+import { verifyUserGoogleTokenQuery } from '@/Graphql/Query/verify';
+import { graphqlClient } from '@/Client/Api';
 
 
 
@@ -80,8 +86,31 @@ const SidebarMenuItems: TwitterSidebarButton[]= [
 ]
 
 export default function Home() {
+ 
+  const handleLoginWithGoogle =useCallback( async (cred:CredentialResponse) => {
+
+    const googleToken = cred.credential;
+
+    if(!googleToken) 
+    
+    return toast.error (`Google token not found`);
+
+    const {verifyGoogleToken} = await graphqlClient.request(
+      verifyUserGoogleTokenQuery,
+      {token:googleToken}
+    );
+
+    toast.success(`Verified Success`);
+    console.log(verifyGoogleToken);
+
+    if(verifyGoogleToken)
+    window.localStorage.setItem("__Twiter_Token",verifyGoogleToken);
+
+    
+  }, [] )
+
   return (
-   <div>
+  <div>
     <div className='grid grid-cols-12 h-screen w-screen px-56 bg-black text-white'>
       <div className=' col-span-3  justify-start pt-1 ml-28'>
         <div className='text-3xl h-fit hover:bg-gray-800 rounded-full p-3  cursor-pointer  transition-all w-fit'>
@@ -112,7 +141,13 @@ export default function Home() {
         <FeedCard/>
         <FeedCard/>
       </div>
-      <div className='col-span-4'></div>
+      <div className='col-span-3 p-5'>
+
+        <div className='p-5 bg-slate-950 rounded-lg'>
+          <h1 className='my-01 text-xl text-center'>New to Twitter?</h1>
+        <GoogleLogin onSuccess={handleLoginWithGoogle} />
+        </div>
+        </div>
     </div>
    </div>
   )
